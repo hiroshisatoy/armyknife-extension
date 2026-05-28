@@ -1,0 +1,11 @@
+{
+  "manifest_version": 3,
+  "name": "Armyknife Extension",
+  "description": "Web utility tools from the browser toolbar.",
+  "version": "0.1.0",
+  "permissions": ["activeTab", "scripting"],
+  "action": {
+    "default_title": "Armyknife Tools",
+    "default_popup": "popup/popup.html"
+  }
+}
