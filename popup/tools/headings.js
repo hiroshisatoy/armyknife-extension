@@ -11,20 +11,6 @@ function collectHeadingOutline() {
   }));
 }
 
-function formatHeadingOutline(headings) {
-  if (!headings.length) {
-    return "見出しが見つかりませんでした。";
-  }
-
-  return headings
-    .map((item) => {
-      const indent = "  ".repeat(Math.max(item.level - 1, 0));
-      const title = item.text || "(空の見出し)";
-      return `${indent}- ${item.tag.toUpperCase()} ${title}`;
-    })
-    .join("\n");
-}
-
 export const headingOutlineTool = {
   id: "heading-outline",
   title: "見出し階層を表示",
@@ -37,7 +23,8 @@ export const headingOutlineTool = {
 
     return {
       status: `${result.length} 件の見出しを取得しました`,
-      output: formatHeadingOutline(result),
+      outputType: "headings",
+      headings: result,
     };
   },
 };

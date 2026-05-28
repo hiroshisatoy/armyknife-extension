@@ -30,6 +30,31 @@
             <button id="clear-result" class="result-action" type="button">クリア</button>
           </div>
         </div>
+        <div
+          id="heading-display-toggle"
+          class="heading-display-toggle"
+          role="group"
+          aria-label="見出しの表示形式"
+          hidden
+        >
+          <span class="heading-display-label">表示形式</span>
+          <button
+            id="heading-mode-list"
+            type="button"
+            class="result-action heading-mode-btn is-selected"
+            data-heading-mode="list"
+          >
+            リスト
+          </button>
+          <button
+            id="heading-mode-tree"
+            type="button"
+            class="result-action heading-mode-btn"
+            data-heading-mode="tree"
+          >
+            罫線
+          </button>
+        </div>
         <div id="status" class="status" role="status" aria-live="polite"></div>
         <div id="result" class="result-body" aria-live="polite"></div>
       </section>
