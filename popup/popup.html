@@ -12,9 +12,24 @@
         <h1>Armyknife Tools</h1>
         <p>実行したいツールを選んでください</p>
       </header>
+      <section class="tool-controls" aria-label="tool controls">
+        <input
+          id="tool-search"
+          class="tool-search"
+          type="search"
+          placeholder="ツールを検索..."
+          autocomplete="off"
+        />
+      </section>
       <section id="tool-list" class="tool-list" aria-label="tool list"></section>
       <section class="result">
-        <h2>結果</h2>
+        <div class="result-header">
+          <h2>結果</h2>
+          <div class="result-actions">
+            <button id="copy-result" class="result-action" type="button">コピー</button>
+            <button id="clear-result" class="result-action" type="button">クリア</button>
+          </div>
+        </div>
         <div id="status" class="status" role="status" aria-live="polite"></div>
         <div id="result" class="result-body" aria-live="polite"></div>
       </section>

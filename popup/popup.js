@@ -3,17 +3,37 @@ import { tools } from "./tools/index.js";
 const toolListElement = document.getElementById("tool-list");
 const statusElement = document.getElementById("status");
 const resultElement = document.getElementById("result");
+const toolSearchElement = document.getElementById("tool-search");
+const copyResultButton = document.getElementById("copy-result");
+const clearResultButton = document.getElementById("clear-result");
+
+let lastResultText = "";
+let lastActiveToolId = "";
+let isRunning = false;
 
 function setStatus(message) {
   statusElement.textContent = message;
 }
 
-function setResult(content) {
+function setResult(content, options = {}) {
+  const { copyable = true } = options;
+  lastResultText = copyable ? content : "";
   resultElement.replaceChildren();
   const text = document.createElement("pre");
   text.className = "result-text";
   text.textContent = content;
   resultElement.appendChild(text);
+  copyResultButton.disabled = !lastResultText;
+}
+
+function toMetaTagsText(tags) {
+  return tags
+    .map((tag) => {
+      const content = tag.content || "(contentなし)";
+      const label = tag.label || tag.key || "(項目名なし)";
+      return `${label}: ${content}`;
+    })
+    .join("\n");
 }
 
 async function copyText(value) {
@@ -21,6 +41,7 @@ async function copyText(value) {
 }
 
 function renderMetaTags(tags) {
+  lastResultText = toMetaTagsText(tags);
   resultElement.replaceChildren();
 
   if (!tags.length) {
@@ -40,7 +61,8 @@ function renderMetaTags(tags) {
 
     const name = document.createElement("h3");
     name.className = "meta-item-name";
-    name.textContent = tag.name;
+    const label = tag.label || tag.key || "(項目名なし)";
+    name.textContent = label;
 
     const copyButton = document.createElement("button");
     copyButton.className = "meta-copy";
@@ -50,7 +72,7 @@ function renderMetaTags(tags) {
       const content = tag.content || "(contentなし)";
       try {
         await copyText(content);
-        setStatus(`「${tag.name}」の内容をコピーしました`);
+        setStatus(`「${label}」の内容をコピーしました`);
       } catch {
         setStatus("コピーに失敗しました");
       }
@@ -68,6 +90,7 @@ function renderMetaTags(tags) {
   });
 
   resultElement.appendChild(list);
+  copyResultButton.disabled = !lastResultText;
 }
 
 function renderToolResult(result) {
@@ -92,6 +115,10 @@ async function getActiveTabId() {
 }
 
 async function runTool(tool, button) {
+  isRunning = true;
+  updateRunButtonsState();
+  lastActiveToolId = tool.id;
+  updateActiveToolHighlight();
   button.disabled = true;
   setStatus(`「${tool.title}」を実行中...`);
 
@@ -104,7 +131,8 @@ async function runTool(tool, button) {
     setStatus("実行に失敗しました");
     setResult(error?.message ?? String(error));
   } finally {
-    button.disabled = false;
+    isRunning = false;
+    updateRunButtonsState();
   }
 }
 
@@ -128,6 +156,8 @@ function createToolItem(tool) {
   button.className = "tool-run";
   button.type = "button";
   button.textContent = "実行";
+  button.dataset.toolRun = "true";
+  button.dataset.toolId = tool.id;
   button.addEventListener("click", () => {
     runTool(tool, button);
   });
@@ -138,14 +168,72 @@ function createToolItem(tool) {
   return item;
 }
 
-function renderTools() {
+function renderTools(filter = "") {
+  const normalizedFilter = filter.trim().toLowerCase();
+  const filteredTools = tools.filter((tool) => {
+    if (!normalizedFilter) {
+      return true;
+    }
+    const haystack = `${tool.title} ${tool.description}`.toLowerCase();
+    return haystack.includes(normalizedFilter);
+  });
+
+  toolListElement.replaceChildren();
   const fragment = document.createDocumentFragment();
-  tools.forEach((tool) => {
+
+  filteredTools.forEach((tool) => {
     fragment.appendChild(createToolItem(tool));
   });
+
+  if (filteredTools.length === 0) {
+    const empty = document.createElement("p");
+    empty.className = "empty-tools";
+    empty.textContent = "一致するツールがありません。";
+    fragment.appendChild(empty);
+  }
+
   toolListElement.appendChild(fragment);
+  updateActiveToolHighlight();
+  updateRunButtonsState();
 }
 
-renderTools();
+function updateActiveToolHighlight() {
+  const items = toolListElement.querySelectorAll(".tool-item");
+  items.forEach((item) => {
+    const runButton = item.querySelector('[data-tool-run="true"]');
+    const toolId = runButton?.dataset.toolId || "";
+    item.classList.toggle("is-active", toolId === lastActiveToolId);
+  });
+}
+
+function updateRunButtonsState() {
+  const runButtons = toolListElement.querySelectorAll('[data-tool-run="true"]');
+  runButtons.forEach((button) => {
+    button.disabled = isRunning;
+  });
+}
+
+toolSearchElement.addEventListener("input", (event) => {
+  renderTools(event.target.value);
+});
+
+copyResultButton.addEventListener("click", async () => {
+  if (!lastResultText) {
+    return;
+  }
+  try {
+    await copyText(lastResultText);
+    setStatus("結果をコピーしました");
+  } catch {
+    setStatus("結果のコピーに失敗しました");
+  }
+});
+
+clearResultButton.addEventListener("click", () => {
+  setResult("ここに実行結果が表示されます。", { copyable: false });
+  setStatus("結果をクリアしました");
+});
+
+renderTools("");
 setStatus("ツールを選択してください");
-setResult("ここに実行結果が表示されます。");
+setResult("ここに実行結果が表示されます。", { copyable: false });
