@@ -1,15 +1,65 @@
 function collectMetaTags() {
-  const metas = Array.from(document.querySelectorAll("meta"));
+  const priorityOrder = [
+    "title",
+    "description",
+    "keywords",
+    "robots",
+    "canonical",
+    "og:title",
+    "og:description",
+    "og:image",
+    "og:url",
+    "twitter:card",
+    "twitter:title",
+    "twitter:description",
+    "twitter:image",
+  ];
 
-  return metas.map((meta, index) => ({
-    index: index + 1,
-    name:
-      meta.getAttribute("name") ||
-      meta.getAttribute("property") ||
-      meta.getAttribute("http-equiv") ||
-      "(name/property/http-equivなし)",
-    content: meta.getAttribute("content") || "",
-  }));
+  const allowedKeys = new Set(priorityOrder);
+  const results = [];
+  const titleText = document.title?.trim() || "";
+
+  if (titleText) {
+    results.push({
+      key: "title",
+      label: "title",
+      content: titleText,
+    });
+  }
+
+  const canonicalLink = document.querySelector('link[rel="canonical"]');
+  if (canonicalLink) {
+    const href = canonicalLink.getAttribute("href") || "";
+    if (href) {
+      results.push({
+        key: "canonical",
+        label: "link[rel=canonical]",
+        content: href,
+      });
+    }
+  }
+
+  const metas = Array.from(document.querySelectorAll("meta"));
+  metas.forEach((meta) => {
+    const name = meta.getAttribute("name");
+    const property = meta.getAttribute("property");
+    const key = (name || property || "").trim().toLowerCase();
+    if (!allowedKeys.has(key) || key === "title" || key === "canonical") {
+      return;
+    }
+
+    results.push({
+      key,
+      label: name ? `meta[name=${name}]` : `meta[property=${property}]`,
+      content: meta.getAttribute("content") || "",
+    });
+  });
+
+  results.sort((a, b) => {
+    return priorityOrder.indexOf(a.key) - priorityOrder.indexOf(b.key);
+  });
+
+  return results;
 }
 
 export const metaTagsTool = {
@@ -23,7 +73,7 @@ export const metaTagsTool = {
     });
 
     return {
-      status: `${result.length} 件の meta タグを取得しました`,
+      status: `${result.length} 件の SEO 主要項目を取得しました`,
       outputType: "meta-tags",
       metaTags: result,
       output:
